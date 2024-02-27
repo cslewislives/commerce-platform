@@ -1,93 +1,102 @@
-import {
-  UPDATE_PRODUCTS,
-  ADD_TO_CART,
-  UPDATE_CART_QUANTITY,
-  REMOVE_FROM_CART,
-  ADD_MULTIPLE_TO_CART,
-  UPDATE_CATEGORIES,
-  UPDATE_CURRENT_CATEGORY,
-  CLEAR_CART,
-  TOGGLE_CART,
-} from './actions';
+import { createSlice } from '@reduxjs/toolkit';
+import { createSelector } from '@reduxjs/toolkit';
 
-// TODO: To get a better understand of how a reducer works - add comments to the various actions in the reducer
-export const reducer = (state, action) => {
-  switch (action.type) {
-    // TODO: Add a comment describing the functionality of the UPDATE_PRODUCTS case
-    // Your comment here
-    case UPDATE_PRODUCTS:
-      return {
-        ...state,
-        products: [...action.products],
-      };
-
-    case ADD_TO_CART:
-      return {
-        ...state,
-        cartOpen: true,
-        cart: [...state.cart, action.product],
-      };
-
-    case ADD_MULTIPLE_TO_CART:
-      return {
-        ...state,
-        cart: [...state.cart, ...action.products],
-      };
-    // TODO: Add a comment describing the functionality of the UPDATE_CART_QUANTITY case
-    // Your comment here
-    case UPDATE_CART_QUANTITY:
-      return {
-        ...state,
-        cartOpen: true,
-        cart: state.cart.map((product) => {
-          if (action._id === product._id) {
-            product.purchaseQuantity = action.purchaseQuantity;
-          }
-          return product;
-        }),
-      };
-
-    // TODO: Add a comment describing the functionality of the REMOVE_FROM_CART case
-    // Your comment here
-    case REMOVE_FROM_CART:
-      let newState = state.cart.filter((product) => {
-        return product._id !== action._id;
-      });
-
-      return {
-        ...state,
-        cartOpen: newState.length > 0,
-        cart: newState,
-      };
-
-    case CLEAR_CART:
-      return {
-        ...state,
-        cartOpen: false,
-        cart: [],
-      };
-
-    case TOGGLE_CART:
-      return {
-        ...state,
-        cartOpen: !state.cartOpen,
-      };
-
-    case UPDATE_CATEGORIES:
-      return {
-        ...state,
-        categories: [...action.categories],
-      };
-
-    case UPDATE_CURRENT_CATEGORY:
-      return {
-        ...state,
-        currentCategory: action.currentCategory,
-      };
-
-    // TODO: Add a comment describing what the default case is for
-    // Your comment here
-    default:
-      return state;
-  }
+export const initialState = {
+  products: [],
+  categories: [],
+  currentCategory: '',
+  cart: [],
+  cartOpen: false
 };
+
+export const cartSlice = createSlice({
+  name: 'cart',
+  initialState,
+  reducers: {
+    productsUpdated: (state, action) => {
+      state.products = action.payload;
+    },
+    addedToCart: (state, action) => {
+      state.cartOpen = true;
+      state.cart = [...state.cart, action.payload]; // Create a new array
+    },
+    multipleAddedToCart: (state, action) => {
+      state.cart = action.payload.products.slice(); // Create a new array
+    },
+    cartQuantityUpdated: (state, action) => {
+      state.cartOpen = true;
+      const { _id, purchaseQuantity } = action.payload;
+      const updatedCart = state.cart.map((product) =>
+        product._id === _id ? { ...product, purchaseQuantity } : product
+      );
+      state.cart = updatedCart;
+    },
+    removedFromCart: (state, action) => {
+      state.cartOpen =
+        state.cart.filter((product) => product._id !== action.payload._id)
+          .length > 0;
+      state.cart = state.cart.filter(
+        (product) => product._id !== action.payload._id
+      );
+    },
+    cartCleared: (state) => {
+      state.cartOpen = false;
+      state.cart = [];
+    },
+    cartToggled: (state) => {
+      state.cartOpen = !state.cartOpen;
+    },
+    categoriesUpdated: (state, action) => {
+      state.categories = action.payload;
+    },
+    currentCategoryUpdated: (state, action) => {
+      state.currentCategory = action.payload;
+    }
+  }
+});
+
+export const selectCart = (state) => state.cart;
+
+// Select the products
+export const selectProducts = createSelector(
+  [selectCart],
+  (cart) => cart.products
+);
+
+// Select the categories
+export const selectCategories = createSelector(
+  [selectCart],
+  (cart) => cart.categories
+);
+
+// Select the current category
+export const selectCurrentCategory = createSelector(
+  [selectCart],
+  (cart) => cart.currentCategory
+);
+
+// Select the cart items
+export const selectCartItems = createSelector(
+  [selectCart],
+  (cart) => cart.cart
+);
+
+// Select the cart open status
+export const selectCartOpen = createSelector(
+  [selectCart],
+  (cart) => cart.cartOpen
+);
+
+export const {
+  productsUpdated,
+  addedToCart,
+  multipleAddedToCart,
+  cartQuantityUpdated,
+  removedFromCart,
+  cartCleared,
+  cartToggled,
+  categoriesUpdated,
+  currentCategoryUpdated
+} = cartSlice.actions;
+
+export default cartSlice.reducer;
